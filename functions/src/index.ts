@@ -1,6 +1,12 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
 import axios, { AxiosError } from 'axios'
+import {
+  sendViewContentEvent,
+  sendClickButtonEvent,
+  sendEnterChannelEvent,
+  testMetaPixelConnection,
+} from './meta-pixel'
 
 admin.initializeApp()
 
@@ -102,6 +108,25 @@ export const trackPageview = functions.https.onRequest(
         { merge: true }
       )
 
+      // Enviar evento para Meta Pixel (se configurado)
+      try {
+        const pixelDoc = await db.collection('pixels').doc(pixelId).get()
+        if (pixelDoc.exists) {
+          const pixelData = pixelDoc.data()
+          if (pixelData && pixelData.accessToken) {
+            await sendViewContentEvent(
+              pixelData.pixelId,
+              pixelData.accessToken,
+              url || '',
+              funnelId
+            )
+          }
+        }
+      } catch (metaError) {
+        // Não falhar a requisição se Meta Pixel falhar
+        console.error('Error sending to Meta Pixel:', metaError)
+      }
+
       // Resposta de sucesso
       res.status(200).json({
         success: true,
@@ -186,6 +211,26 @@ export const trackClick = functions.https.onRequest(async (req, res) => {
       },
       { merge: true }
     )
+
+    // Enviar evento para Meta Pixel (se configurado)
+    try {
+      const pixelDoc = await db.collection('pixels').doc(pixelId).get()
+      if (pixelDoc.exists) {
+        const pixelData = pixelDoc.data()
+        if (pixelData && pixelData.accessToken) {
+          await sendClickButtonEvent(
+            pixelData.pixelId,
+            pixelData.accessToken,
+            url || '',
+            funnelId,
+            buttonId
+          )
+        }
+      }
+    } catch (metaError) {
+      // Não falhar a requisição se Meta Pixel falhar
+      console.error('Error sending to Meta Pixel:', metaError)
+    }
 
     // Resposta de sucesso
     res.status(200).json({
@@ -303,6 +348,43 @@ async function onMemberJoin(
     console.log(
       `Lead created for user ${member.id} (${member.username || 'no username'}) in funnel ${funnelId}`
     )
+
+    // 🔥 ENVIAR EVENTO "EnterChannel" PARA META PIXEL
+    // Este é o evento principal que rastreia conversões no Meta
+    try {
+      // Buscar dados do funil para obter pixelId
+      const funnelDoc = await db.collection('funnels').doc(funnelId).get()
+      if (funnelDoc.exists) {
+        const funnelData = funnelDoc.data()
+        if (funnelData && funnelData.pixelId) {
+          // Buscar dados do pixel
+          const pixelDoc = await db.collection('pixels').doc(funnelData.pixelId).get()
+          if (pixelDoc.exists) {
+            const pixelData = pixelDoc.data()
+            if (pixelData && pixelData.accessToken) {
+              // Enviar evento EnterChannel para Meta
+              await sendEnterChannelEvent(
+                pixelData.pixelId,
+                pixelData.accessToken,
+                funnelId,
+                {
+                  telegramUserId: member.id,
+                  username: member.username,
+                  firstName: member.first_name,
+                  lastName: member.last_name,
+                }
+              )
+              console.log(
+                `✅ Meta Pixel event "EnterChannel" sent for user ${member.id}`
+              )
+            }
+          }
+        }
+      }
+    } catch (metaError) {
+      // Não falhar a operação se Meta Pixel falhar
+      console.error('❌ Error sending EnterChannel to Meta Pixel:', metaError)
+    }
   } catch (error) {
     console.error('Error in onMemberJoin:', error)
     throw error
@@ -434,6 +516,55 @@ export const telegramWebhook = functions.https.onRequest(
     }
   }
 )
+
+/**
+ * Cloud Function: testMetaPixel
+ * Testa a conexão com Meta Pixel usando as credenciais fornecidas
+ */
+export const testMetaPixel = functions.https.onRequest(async (req, res) => {
+  // Configurar CORS
+  if (configureCORS(req, res)) return
+
+  try {
+    // Validar método
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' })
+      return
+    }
+
+    // Extrair dados do body
+    const { pixelId, accessToken } = req.body
+
+    // Validar dados obrigatórios
+    if (!pixelId || !accessToken) {
+      res.status(400).json({ error: 'pixelId and accessToken are required' })
+      return
+    }
+
+    // Testar conexão
+    const result = await testMetaPixelConnection(pixelId, accessToken)
+
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: 'Meta Pixel connection successful',
+        details: result.response,
+      })
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Meta Pixel connection failed',
+        error: result.error,
+      })
+    }
+  } catch (error) {
+    console.error('Error testing Meta Pixel:', error)
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})
 
 // Exportar funções de postback
 export * from './postbacks'

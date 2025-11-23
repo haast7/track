@@ -1,0 +1,78 @@
+⚡ CLOUD FUNCTIONS NECESSÁRIAS
+// 1. TRACKING
+export const trackPageview
+export const trackClick
+
+// 2. TELEGRAM
+export const telegramWebhook
+export const onMemberJoin
+export const onMemberLeft
+
+// 3. POSTBACKS (Triggers)
+export const sendPostbackPageview  // Trigger on tracking update
+export const sendPostbackClick     // Trigger on tracking update
+export const sendPostbackJoin      // Trigger on lead create
+export const sendPostbackLeft      // Trigger on lead update
+🎨 PÁGINAS DO FRONTEND
+/login              → Autenticação
+/register           → Cadastro
+/dashboard          → Métricas em tempo real
+/pixels             → Gerenciar pixels do Meta
+/canal              → Gerenciar canais do Telegram
+/dominios           → Gerenciar domínios
+/funis              → Criar e gerenciar funis
+/leads              → Ver leads capturados
+/postbacks          → Configurar webhooks
+🔄 FLUXO DE DADOS COMPLETO
+FLUXO 1: Tracking no Site
+1. Usuário cria FUNIL no painel
+   ↓
+2. Sistema gera TRACKING SCRIPT
+   ↓
+3. Usuário cola script no site
+   ↓
+4. Visitante acessa o site
+   ↓
+5. Script chama trackPageview (Cloud Function)
+   ↓
+6. Function salva em /tracking/{funnelId}/daily/{data}
+   ↓
+7. Firestore Trigger dispara sendPostbackPageview
+   ↓
+8. Dashboard atualiza em tempo real (onSnapshot)
+FLUXO 2: Clique no Botão
+1. Visitante clica em elemento com class="telegram-button"
+   ↓
+2. Script chama trackClick (Cloud Function)
+   ↓
+3. Function salva em /tracking/{funnelId}/daily/{data}
+   ↓
+4. Firestore Trigger dispara sendPostbackClick
+   ↓
+5. Dashboard atualiza métricas
+FLUXO 3: Entrada no Grupo
+1. Usuário clica no link do Telegram
+   ↓
+2. Entra no grupo
+   ↓
+3. Telegram envia webhook para telegramWebhook
+   ↓
+4. Function identifica evento chat_member (new_member)
+   ↓
+5. Function salva em /leads/{leadId} com status='active'
+   ↓
+6. Firestore Trigger dispara sendPostbackJoin
+   ↓
+7. Dashboard mostra novo lead em tempo real
+FLUXO 4: Saída do Grupo
+1. Usuário sai do grupo
+   ↓
+2. Telegram envia webhook para telegramWebhook
+   ↓
+3. Function identifica evento chat_member (left)
+   ↓
+4. Function atualiza lead: status='exited', exitedAt=now
+   ↓
+5. Firestore Trigger dispara sendPostbackLeft
+   ↓
+6. Dashboard atualiza métricas de retenção

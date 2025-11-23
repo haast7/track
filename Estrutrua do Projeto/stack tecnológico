@@ -1,0 +1,15 @@
+🔧 STACK TECNOLÓGICO
+Frontend:
+React + TypeScript + Vite
+Shadcn/ui (componentes)
+TailwindCSS (estilização)
+React Router (rotas)
+Firebase SDK (autenticação + Firestore real-time)
+Backend:
+Firebase Authentication (login/registro)
+Cloud Functions (Node.js 18 + TypeScript)
+Firestore (banco de dados NoSQL)
+Firestore Security Rules (proteção)
+Integrações:
+Telegram Bot API
+Meta Pixel/Conversions API (opcional)

@@ -1,0 +1,76 @@
+firestore/
+├── users/{userId}
+│   ├── email: string
+│   ├── createdAt: timestamp
+│   └── plan: string
+│
+├── pixels/{pixelId}
+│   ├── userId: string
+│   ├── name: string
+│   ├── pixelId: string (Meta Pixel ID)
+│   ├── accessToken: string
+│   ├── isActive: boolean
+│   └── createdAt: timestamp
+│
+├── channels/{channelId}
+│   ├── userId: string
+│   ├── name: string
+│   ├── botToken: string
+│   ├── groupId: string
+│   ├── isActive: boolean
+│   └── createdAt: timestamp
+│
+├── domains/{domainId}
+│   ├── userId: string
+│   ├── url: string (ex: https://meusite.com)
+│   └── createdAt: timestamp
+│
+├── funnels/{funnelId}
+│   ├── userId: string
+│   ├── name: string
+│   ├── pixelId: string
+│   ├── channelId: string
+│   ├── domainId: string
+│   ├── urls: string[] (slugs das páginas)
+│   ├── trackingScript: string (gerado)
+│   ├── telegramLink: string (gerado)
+│   ├── isActive: boolean
+│   └── createdAt: timestamp
+│
+├── tracking/{funnelId}/daily/{YYYY-MM-DD}
+│   ├── funnelId: string
+│   ├── pixelId: string
+│   ├── userId: string
+│   ├── pageviews: number
+│   ├── clicks: number
+│   └── lastUpdated: timestamp
+│
+├── leads/{leadId}
+│   ├── userId: string
+│   ├── funnelId: string
+│   ├── channelId: string
+│   ├── telegramUserId: number
+│   ├── username: string
+│   ├── firstName: string
+│   ├── lastName: string
+│   ├── status: 'active' | 'exited'
+│   ├── enteredAt: timestamp
+│   └── exitedAt: timestamp | null
+│
+├── postbacks/{postbackId}
+│   ├── userId: string
+│   ├── name: string
+│   ├── webhookUrl: string
+│   ├── eventType: 'viewPage' | 'clickButton' | 'memberJoin' | 'memberLeft'
+│   ├── funnelIds: string[] | null (null = todos os funis)
+│   ├── isActive: boolean
+│   └── stats: { sent: number, failed: number, lastSent: timestamp }
+│
+└── postback_logs/{logId}
+    ├── postbackId: string
+    ├── userId: string
+    ├── eventType: string
+    ├── status: 'success' | 'failed'
+    ├── payload: object
+    ├── response: object
+    └── createdAt: timestamp

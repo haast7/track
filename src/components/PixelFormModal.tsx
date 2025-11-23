@@ -17,7 +17,7 @@ import { Pixel } from '@/types'
 const pixelSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   pixelId: z.string().min(1, 'Pixel ID é obrigatório'),
-  accessToken: z.string().min(1, 'Access Token é obrigatório'),
+  accessToken: z.string().optional(), // Opcional - necessário apenas para Conversion API
 })
 
 type PixelFormData = z.infer<typeof pixelSchema>
@@ -102,8 +102,21 @@ export default function PixelFormModal({
               id="accessToken"
               type="password"
               {...register('accessToken')}
-              placeholder="Seu access token do Meta"
+              placeholder="Seu access token do Meta (opcional)"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Opcional, mas recomendado. O Access Token habilita o envio de eventos 
+              via Facebook Conversion API, melhorando a qualidade dos dados e 
+              contornando bloqueadores de ads.{' '}
+              <a
+                href="https://business.facebook.com/settings/system-users"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                Obter Access Token
+              </a>
+            </p>
             {errors.accessToken && (
               <p className="text-sm text-red-500">
                 {errors.accessToken.message}

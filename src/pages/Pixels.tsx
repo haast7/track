@@ -6,7 +6,7 @@ import { Pixel } from '@/types'
 import AppLayout from '@/components/AppLayout'
 import { Button } from '@/components/ui/button'
 import PixelFormModal from '@/components/PixelFormModal'
-import { Plus, Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 
 export default function Pixels() {
   const { user } = useAuth()
@@ -51,26 +51,26 @@ export default function Pixels() {
     return () => unsubscribe()
   }, [user])
 
-  const handleCreate = async (data: { name: string; pixelId: string; accessToken: string }) => {
+  const handleCreate = async (data: { name: string; pixelId: string; accessToken?: string }) => {
     if (!user) return
 
     await addDoc(collection(db, 'pixels'), {
       userId: user.uid,
       name: data.name,
       pixelId: data.pixelId,
-      accessToken: data.accessToken,
+      accessToken: data.accessToken || null,
       isActive: true,
       createdAt: serverTimestamp(),
     })
   }
 
-  const handleUpdate = async (data: { name: string; pixelId: string; accessToken: string }) => {
+  const handleUpdate = async (data: { name: string; pixelId: string; accessToken?: string }) => {
     if (!editingPixel) return
 
     await updateDoc(doc(db, 'pixels', editingPixel.id), {
       name: data.name,
       pixelId: data.pixelId,
-      accessToken: data.accessToken,
+      accessToken: data.accessToken || null,
     })
     setEditingPixel(null)
   }
@@ -97,7 +97,7 @@ export default function Pixels() {
     setModalOpen(true)
   }
 
-  const handleModalSubmit = async (data: { name: string; pixelId: string; accessToken: string }) => {
+  const handleModalSubmit = async (data: { name: string; pixelId: string; accessToken?: string }) => {
     if (editingPixel) {
       await handleUpdate(data)
     } else {
@@ -159,7 +159,7 @@ export default function Pixels() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`px-2 py-1 text-xs rounded ${
                       pixel.isActive
@@ -169,6 +169,17 @@ export default function Pixels() {
                   >
                     {pixel.isActive ? 'Ativo' : 'Inativo'}
                   </span>
+                  {pixel.accessToken ? (
+                    <span className="px-2 py-1 text-xs rounded bg-green-500/20 text-green-500 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Conversion API Ativa
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs rounded bg-yellow-500/20 text-yellow-500 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Apenas Pixel Básico
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-border">

@@ -1,6 +1,5 @@
 import * as functions from 'firebase-functions'
 import * as admin from 'firebase-admin'
-import axios, { AxiosError } from 'axios'
 import {
   sendViewContentEvent,
   sendClickButtonEvent,
@@ -56,7 +55,7 @@ export const trackPageview = functions.https.onRequest(
       }
 
       // Extrair dados do body
-      const { funnelId, url, timestamp } = req.body
+      const { funnelId, url } = req.body
 
       // Validar dados obrigatórios
       if (!funnelId) {
@@ -160,7 +159,7 @@ export const trackClick = functions.https.onRequest(async (req, res) => {
     }
 
     // Extrair dados do body
-    const { funnelId, buttonId, url, timestamp } = req.body
+    const { funnelId, buttonId, url } = req.body
 
     // Validar dados obrigatórios
     if (!funnelId) {
@@ -268,7 +267,6 @@ async function findFunnelByGroupId(
     }
 
     const channelDoc = channelsSnapshot.docs[0]
-    const channelData = channelDoc.data()
     const channelId = channelDoc.id
 
     // Buscar funil pelo channelId

@@ -3,7 +3,8 @@ import { Funnel, Pixel, TelegramChannel, Domain } from '@/types'
 export function generateTrackingScript(
   funnelId: string,
   domain: Domain,
-  urls: string[]
+  urls: string[],
+  pixelId?: string // Opcional - ID do Meta Pixel para tracking client-side
 ): string {
   const baseUrl = import.meta.env.VITE_FUNCTIONS_URL || 'https://your-region-your-project.cloudfunctions.net'
   
@@ -11,6 +12,7 @@ export function generateTrackingScript(
 (function() {
   const funnelId = '${funnelId}';
   const baseUrl = '${baseUrl}';
+  const metaPixelId = ${pixelId ? `'${pixelId}'` : 'null'};
   const currentUrl = window.location.href;
   const allowedUrls = ${JSON.stringify(urls)};
   
@@ -18,7 +20,21 @@ export function generateTrackingScript(
   const isAllowedUrl = allowedUrls.some(url => currentUrl.includes(url));
   if (!isAllowedUrl) return;
   
-  // Track pageview automaticamente no load
+  // 🔥 INJETAR META PIXEL (client-side tracking) - Modo Híbrido
+  if (metaPixelId) {
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', metaPixelId);
+    fbq('track', 'PageView');
+  }
+  
+  // Track pageview via Cloud Function (server-side)
   fetch(baseUrl + '/trackPageview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,6 +45,12 @@ export function generateTrackingScript(
   document.addEventListener('click', function(e) {
     const target = e.target.closest('.telegram-button');
     if (target) {
+      // Client-side event (se Meta Pixel estiver carregado)
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'ClickButton');
+      }
+      
+      // Server-side event
       fetch(baseUrl + '/trackClick', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -66,6 +66,9 @@ export default function PostbackFormModal({
           isActive: postback.isActive,
         }
       : {
+          name: '',
+          webhookUrl: '',
+          eventType: 'viewPage',
           funnelIds: null,
           isActive: true,
         },
@@ -149,7 +152,7 @@ export default function PostbackFormModal({
           <div className="space-y-2">
             <Label htmlFor="eventType">Tipo de Evento</Label>
             <Select
-              value={watch('eventType')}
+              value={watch('eventType') || 'viewPage'}
               onValueChange={(value) =>
                 setValue('eventType', value as PostbackFormData['eventType'])
               }

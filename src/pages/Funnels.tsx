@@ -179,16 +179,21 @@ export default function Funnels() {
 
     const domain = domains.find((d) => d.id === data.domainId)
     const channel = channels.find((c) => c.id === data.channelId)
+    const pixel = pixels.find((p) => p.id === data.pixelId)
 
     if (!domain || !channel) {
       throw new Error('Domínio ou canal não encontrado')
     }
 
+    // Obter pixelId do Meta (se disponível)
+    const metaPixelId = pixel?.pixelId
+
     // Gerar tracking script
     const trackingScript = generateTrackingScript(
       'temp-id',
       domain,
-      data.urls
+      data.urls,
+      metaPixelId
     )
 
     // Gerar link do Telegram
@@ -213,7 +218,7 @@ export default function Funnels() {
     })
 
     // Atualizar script com ID real
-    const updatedScript = generateTrackingScript(docRef.id, domain, data.urls)
+    const updatedScript = generateTrackingScript(docRef.id, domain, data.urls, metaPixelId)
     await updateDoc(docRef, {
       trackingScript: updatedScript,
     })
@@ -231,16 +236,21 @@ export default function Funnels() {
 
     const domain = domains.find((d) => d.id === data.domainId)
     const channel = channels.find((c) => c.id === data.channelId)
+    const pixel = pixels.find((p) => p.id === data.pixelId)
 
     if (!domain || !channel) {
       throw new Error('Domínio ou canal não encontrado')
     }
 
+    // Obter pixelId do Meta (se disponível)
+    const metaPixelId = pixel?.pixelId
+
     // Gerar novo tracking script
     const trackingScript = generateTrackingScript(
       editingFunnel.id,
       domain,
-      data.urls
+      data.urls,
+      metaPixelId
     )
 
     // Gerar novo link do Telegram

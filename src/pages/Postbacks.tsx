@@ -122,33 +122,98 @@ export default function Postbacks() {
   useEffect(() => {
     if (!user) return
 
+    const userId = user.uid
+    let unsubscribe: (() => void) | null = null
+
+    // Função para carregar logs sem ordenação (fallback)
+    const loadLogsWithoutOrder = () => {
+      const qWithoutOrder = query(
+        collection(db, 'postback_logs'),
+        where('userId', '==', userId),
+        limit(100)
+      )
+      
+      return onSnapshot(
+        qWithoutOrder,
+        (snapshot) => {
+          const logsData: PostbackLog[] = []
+          snapshot.forEach((doc) => {
+            const data = doc.data()
+            logsData.push({
+              id: doc.id,
+              postbackId: data.postbackId,
+              userId: data.userId,
+              eventType: data.eventType,
+              status: data.status,
+              payload: data.payload,
+              response: data.response,
+              error: data.error || null,
+              createdAt: data.createdAt?.toDate() || new Date(),
+            })
+          })
+          // Ordenar no cliente
+          logsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+          setLogs(logsData)
+        },
+        (fallbackError) => {
+          console.error('Erro ao carregar logs sem ordenação:', fallbackError)
+        }
+      )
+    }
+
+    // Tentar carregar com ordenação primeiro
     const q = query(
       collection(db, 'postback_logs'),
-      where('userId', '==', user.uid),
+      where('userId', '==', userId),
       orderBy('createdAt', 'desc'),
       limit(100)
     )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logsData: PostbackLog[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data()
-        logsData.push({
-          id: doc.id,
-          postbackId: data.postbackId,
-          userId: data.userId,
-          eventType: data.eventType,
-          status: data.status,
-          payload: data.payload,
-          response: data.response,
-          error: data.error || null,
-          createdAt: data.createdAt?.toDate() || new Date(),
+    unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const logsData: PostbackLog[] = []
+        snapshot.forEach((doc) => {
+          const data = doc.data()
+          logsData.push({
+            id: doc.id,
+            postbackId: data.postbackId,
+            userId: data.userId,
+            eventType: data.eventType,
+            status: data.status,
+            payload: data.payload,
+            response: data.response,
+            error: data.error || null,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          })
         })
-      })
-      setLogs(logsData)
-    })
+        setLogs(logsData)
+      },
+      (error) => {
+        // Se o erro for de índice faltando ou sendo construído, usar fallback
+        if (error.code === 'failed-precondition') {
+          // Não logar como erro se for apenas índice sendo construído
+          const isIndexBuilding = error.message?.includes('currently building') || 
+                                  error.message?.includes('cannot be used yet')
+          
+          if (isIndexBuilding) {
+            // Silenciosamente usar fallback quando índice está sendo construído
+            unsubscribe = loadLogsWithoutOrder()
+          } else {
+            // Logar apenas se for outro tipo de erro de índice
+            console.warn('Índice do Firestore necessário. Carregando logs sem ordenação...')
+            unsubscribe = loadLogsWithoutOrder()
+          }
+        } else {
+          // Para outros erros, logar normalmente
+          console.error('Erro ao carregar logs de postback:', error)
+        }
+      }
+    )
 
-    return () => unsubscribe()
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
   }, [user])
 
   const handleCreate = async (data: {

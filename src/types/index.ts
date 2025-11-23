@@ -10,7 +10,7 @@ export interface Pixel {
   userId: string
   name: string
   pixelId: string
-  accessToken: string
+  accessToken?: string // Opcional - necessário apenas para Conversion API
   isActive: boolean
   createdAt: Date
 }

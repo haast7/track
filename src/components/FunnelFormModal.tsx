@@ -76,6 +76,10 @@ export default function FunnelFormModal({
           requiresApproval: funnel.requiresApproval,
         }
       : {
+          name: '',
+          pixelId: '',
+          channelId: '',
+          domainId: '',
           urls: [''],
           requiresApproval: false,
         },
@@ -133,7 +137,7 @@ export default function FunnelFormModal({
             <div className="space-y-2">
               <Label htmlFor="pixelId">Pixel</Label>
               <Select
-                value={watch('pixelId')}
+                value={watch('pixelId') || ''}
                 onValueChange={(value) => setValue('pixelId', value)}
               >
                 <SelectTrigger>
@@ -155,7 +159,7 @@ export default function FunnelFormModal({
             <div className="space-y-2">
               <Label htmlFor="channelId">Canal</Label>
               <Select
-                value={watch('channelId')}
+                value={watch('channelId') || ''}
                 onValueChange={(value) => setValue('channelId', value)}
               >
                 <SelectTrigger>
@@ -179,7 +183,7 @@ export default function FunnelFormModal({
             <div className="space-y-2">
               <Label htmlFor="domainId">Domínio</Label>
               <Select
-                value={watch('domainId')}
+                value={watch('domainId') || ''}
                 onValueChange={(value) => setValue('domainId', value)}
               >
                 <SelectTrigger>
